@@ -2,30 +2,30 @@
 pragma solidity 0.8.24;
 
 import { XApp } from "src/pkg/XApp.sol";
-import { XGasSwap } from "src/pkg/XGasSwap.sol";
+import { XGasPump } from "src/pkg/XGasPump.sol";
 import { ConfLevel } from "src/libraries/ConfLevel.sol";
 
 /**
  * @title Funder
  * @notice Example contract that shows how to use XGasPump
  */
-contract Funder is XApp, XGasSwap {
+contract Funder is XApp, XGasPump {
     address public thingDoer;
 
-    constructor(address portal, address omniGasEx) XApp(portal, ConfLevel.Latest) XGasSwap(omniGasEx) { }
+    constructor(address portal, address pump) XApp(portal, ConfLevel.Latest) XGasPump(pump) { }
 
     /**
      * @notice Simple external method to let msg.sender swap msg.value ETH for OMNI, on Omni
      */
-    function swapForOMNI() external payable {
-        swapForOMNI(msg.sender, msg.value);
+    function getOMNI() external payable {
+        fillUp(msg.sender, msg.value);
     }
 
     /**
      * @notice Example of doing an xcall, and using excess msg.value to fund the caller on Omni,
      *        if they paid enough
      */
-    function doThingAndMaybeFundMeOMNI() external payable {
+    function doThingAndMaybeGetOMNI() external payable {
         uint256 fee = xcall({
             destChainId: omniChainId(),
             to: thingDoer,
@@ -35,7 +35,7 @@ contract Funder is XApp, XGasSwap {
 
         require(msg.value >= fee, "Funder: insufficient fee");
 
-        if (msg.value > fee) swapForOMNIOrRefund(msg.sender, msg.value - fee);
+        if (msg.value > fee) fillUpOrRefund(msg.sender, msg.value - fee);
     }
 
     function doThingFee() external view returns (uint256) {
